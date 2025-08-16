@@ -25,14 +25,6 @@ def connect_to_redshift(redshift_config: dict):
         engine: SQLAlchemy engine connected to Redshift.
     """
     try:
-        # connection_string = (
-        #     f"postgresql://{redshift_config['user']}:"
-        #     f"{redshift_config['password']}@"
-        #     f"{redshift_config['host']}:"
-        #     f"{redshift_config['port']}/"
-        #     f"{redshift_config['database']}"
-        # )
-        # engine = create_engine(connection_string, isolation_level="AUTOCOMMIT")
 
         conn = redshift_connector.connect(
      host=REDSHIFT_HOST,
