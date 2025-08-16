@@ -116,9 +116,8 @@ async def mentions(
                     dd.year,
                     dd.month,
                     dd.day,
-                    SUM(tf.mentions) as daily_mentions,
                     SUM(tf.no_views) as daily_reach,
-                    COUNT(tf.tweet_id) as daily_tweet_count
+                    COUNT(tf.tweet_id) as daily_mentions
                 FROM {tweet_fact_table} tf
                 INNER JOIN {firm_dim_table} fd ON tf.firm_id = fd.firm_id
                 INNER JOIN {date_dim_table} dd ON tf.date_id = dd.date_id
@@ -138,8 +137,7 @@ async def mentions(
                 month,
                 day,
                 daily_mentions as mentions,
-                daily_reach as reach,
-                daily_tweet_count as tweet_count
+                daily_reach as reach
             FROM firm_daily_metrics
             ORDER BY firm, date;
             """
@@ -203,9 +201,7 @@ async def mentions(
 
             """
 
-
             tweet_engagement_query = """
-            
                 WITH tweet_engagement AS (
                     SELECT 
                         tf.tweet_id,
@@ -338,5 +334,4 @@ async def mentions(
             )
         else:
             raise e
-
 

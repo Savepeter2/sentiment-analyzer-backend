@@ -68,8 +68,6 @@ async def recommendation(
                 "modeled_topics": "Modeled Topic A",
                 "total_mentions_formatted": "1K",
                 "total_mentions": 1000,
-                "total_tweets_formatted": "500",
-                "total_tweets": 500,
                 "total_reach_formatted": "10K",
                 "total_reach": 10000,
                 "unique_users": 100,
@@ -93,7 +91,7 @@ async def recommendation(
     try:
         most_frequent_topics_query = """
 
-                WITH topic_analytics AS (
+             WITH topic_analytics AS (
                     SELECT 
                         td.topic_id,
                         td.topic_name,
@@ -101,9 +99,8 @@ async def recommendation(
                         fd.firm,
                         tf.firm_id,
                         -- Topic metrics aggregation by firm
-                        COUNT(tf.tweet_id) as total_tweets,
+                        COUNT(tf.tweet_id) as total_mentions,  
                         COUNT(DISTINCT tf.user_id) as unique_users,
-                        SUM(COALESCE(tf.mentions, 0)) as total_mentions,
                         SUM(COALESCE(tf.no_views, 0)) as total_reach,
                         SUM(COALESCE(tf.no_likes + tf.no_retweets + tf.no_replies + tf.no_quotes + tf.no_bookmarks, 0)) as total_engagement,
                         -- Date range for topic activity
@@ -111,12 +108,11 @@ async def recommendation(
                         MAX(dd.date) as last_discussion_date,
                         COUNT(DISTINCT dd.date) as active_days,
                         -- Average metrics
-                        ROUND(AVG(COALESCE(tf.mentions, 0)), 2) as avg_mentions_per_tweet,
                         ROUND(AVG(COALESCE(tf.no_views, 0)), 2) as avg_reach_per_tweet,
                         -- Sentiment breakdown
-                        SUM(CASE WHEN tf.consensus_sentiment = 'positive' THEN 1 ELSE 0 END) as positive_tweets,
-                        SUM(CASE WHEN tf.consensus_sentiment = 'negative' THEN 1 ELSE 0 END) as negative_tweets,
-                        SUM(CASE WHEN tf.consensus_sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral_tweets
+                        SUM(CASE WHEN tf.consensus_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_tweets,
+                        SUM(CASE WHEN tf.consensus_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_tweets,
+                        SUM(CASE WHEN tf.consensus_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_tweets
                     FROM tweet_fact tf
                     LEFT JOIN topic_dim td ON tf.topic_id = td.topic_id    -- Join on distribution key
                     LEFT JOIN firm_dim fd ON tf.firm_id = fd.firm_id       -- Join on distribution key
@@ -125,7 +121,13 @@ async def recommendation(
                         AND td.topic_name != ''
                         AND fd.firm IS NOT NULL
                         AND fd.firm != ''
-                    
+                        -- Optional: Add date range filter
+                        -- AND dd.date >= '2024-01-01'
+                        -- AND dd.date <= '2024-12-31'
+                        -- Optional: Filter by specific topics
+                        -- AND td.topic_name ILIKE '%network%' OR td.topic_name ILIKE '%service%'
+                        -- Optional: Filter by specific firms
+                        -- AND fd.firm IN ('MTN', 'Airtel', 'Glo', '9mobile')
                     GROUP BY 
                         td.topic_id,
                         td.topic_name,
@@ -139,20 +141,13 @@ async def recommendation(
                     topic_id,
                     firm_id,
                     modeled_topics,
-                    -- Format total mentions in readable format
+                    -- Format total mentions (which is count of tweets about this topic)
                     CASE 
                         WHEN total_mentions >= 1000000 THEN ROUND(total_mentions/1000000.0, 1) || 'M'
                         WHEN total_mentions >= 1000 THEN ROUND(total_mentions/1000.0, 1) || 'K'
                         ELSE total_mentions::VARCHAR
                     END as total_mentions_formatted,
                     total_mentions,
-                    -- Format total tweets in readable format
-                    CASE 
-                        WHEN total_tweets >= 1000000 THEN ROUND(total_tweets/1000000.0, 1) || 'M'
-                        WHEN total_tweets >= 1000 THEN ROUND(total_tweets/1000.0, 1) || 'K'
-                        ELSE total_tweets::VARCHAR
-                    END as total_tweets_formatted,
-                    total_tweets,
                     -- Format total reach in readable format
                     CASE 
                         WHEN total_reach >= 1000000 THEN ROUND(total_reach/1000000.0, 1) || 'M'
@@ -164,46 +159,44 @@ async def recommendation(
                     active_days,
                     first_discussion_date,
                     last_discussion_date,
-                    avg_mentions_per_tweet,
                     avg_reach_per_tweet,
                     -- Sentiment percentages
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((positive_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((positive_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END as positive_percent,
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((negative_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((negative_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END as negative_percent,
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((neutral_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((neutral_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END as neutral_percent,
                     -- Formatted sentiment counts with percentages
                     positive_tweets || ' (' || 
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((positive_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((positive_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END || '%)' as positive_sentiment_formatted,
                     
                     negative_tweets || ' (' || 
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((negative_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((negative_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END || '%)' as negative_sentiment_formatted,
                     
                     neutral_tweets || ' (' || 
                     CASE 
-                        WHEN total_tweets > 0 THEN ROUND((neutral_tweets * 100.0) / total_tweets, 1)
+                        WHEN total_mentions > 0 THEN ROUND((neutral_tweets * 100.0) / total_mentions, 1)
                         ELSE 0 
                     END || '%)' as neutral_sentiment_formatted,
                     -- Topic engagement score (combination of mentions, reach, and engagement)
-                    ROUND((total_mentions * 0.3 + (total_reach/1000) * 0.4 + (total_engagement/100) * 0.3), 2) as topic_score
+                    ROUND((total_mentions * 0.5 + (total_reach/1000) * 0.3 + (total_engagement/100) * 0.2), 2) as topic_score
                 FROM topic_analytics
-                -- Sort by most frequent topics (highest mentions and tweets) by firm
+                -- Sort by most frequent topics (highest mentions = most discussed topics) by firm
                 ORDER BY 
                     total_mentions DESC,
-                    total_tweets DESC,
                     total_reach DESC,
                     firm,
                     topic_name
@@ -245,11 +238,6 @@ async def recommendation(
                 "body": str(e)
             }
         )
-
-
-
-
-
 
 
 

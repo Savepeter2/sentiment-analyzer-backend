@@ -117,15 +117,15 @@ async def analysis(
                 dd.month,
                 dd.year,
                 -- Total metrics
-                SUM(tf.mentions) as total_mentions,
+                -- SUM(tf.mentions) as total_mentions,
                 SUM(tf.no_views) as total_reach,
-                COUNT(*) as total_tweets,
+                COUNT(*) as total_mentions,
                 -- Sentiment counts
-                SUM(CASE WHEN tf.consensus_sentiment = 'positive' THEN 1 ELSE 0 END) as positive_count,
-                SUM(CASE WHEN tf.consensus_sentiment = 'negative' THEN 1 ELSE 0 END) as negative_count,
-                SUM(CASE WHEN tf.consensus_sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
+                SUM(CASE WHEN tf.consensus_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
+                SUM(CASE WHEN tf.consensus_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_count,
+                SUM(CASE WHEN tf.consensus_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_count,
                 -- Count tweets with valid sentiment
-                SUM(CASE WHEN tf.consensus_sentiment IN ('positive', 'negative', 'neutral') THEN 1 ELSE 0 END) as sentiment_total
+                SUM(CASE WHEN tf.consensus_sentiment IN ('Positive', 'Negative', 'Neutral') THEN 1 ELSE 0 END) as sentiment_total
             FROM tweet_fact tf
             INNER JOIN firm_dim fd ON tf.firm_id = fd.firm_id    -- Join on distribution key
             INNER JOIN date_dim dd ON tf.date_id = dd.date_id    -- Join on sort key
@@ -219,9 +219,9 @@ async def analysis(
             dd.month,
             dd.year,
             -- Daily aggregations per influencer per firm
-            SUM(tf.mentions) as daily_mentions,
+            -- SUM(tf.mentions) as daily_mentions,
             SUM(tf.no_views) as daily_reach,
-            COUNT(tf.tweet_id) as daily_tweets
+            COUNT(tf.tweet_id) as daily_mentions
         FROM tweet_fact tf
         INNER JOIN user_dim ud ON tf.user_id = ud.user_id      -- Join on distribution key
         INNER JOIN firm_dim fd ON tf.firm_id = fd.firm_id      -- Join on distribution key  
@@ -263,9 +263,6 @@ async def analysis(
         month,
         year,
         firm,
-        daily_tweets,
-        -- Additional useful metrics
-        ROUND(daily_mentions::DECIMAL / daily_tweets, 2) as avg_mentions_per_tweet,
         CASE 
             WHEN daily_reach > 0 THEN ROUND((daily_mentions * 100.0) / daily_reach, 2)
             ELSE 0 
@@ -396,5 +393,3 @@ async def analysis(
 
 
 
-# if __name__ == "__main__":
-#     asyncio.run(analysis_home())
