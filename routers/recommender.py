@@ -7,9 +7,12 @@ from fastapi import APIRouter, HTTPException
 from configs.config import (
     logger
 )
+from helpers.utils import generate_chatbot_response
 from app.database import conn
 import pandas as pd
 import asyncio
+from pydantic import BaseModel, Field
+from typing import Dict, Any
 
 router = APIRouter()
 
@@ -95,7 +98,6 @@ async def recommendation(
                     SELECT 
                         td.topic_id,
                         td.topic_name,
-                        td.modeled_topics,
                         fd.firm,
                         tf.firm_id,
                         -- Topic metrics aggregation by firm
@@ -110,9 +112,9 @@ async def recommendation(
                         -- Average metrics
                         ROUND(AVG(COALESCE(tf.no_views, 0)), 2) as avg_reach_per_tweet,
                         -- Sentiment breakdown
-                        SUM(CASE WHEN tf.consensus_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_tweets,
-                        SUM(CASE WHEN tf.consensus_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_tweets,
-                        SUM(CASE WHEN tf.consensus_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_tweets
+                        SUM(CASE WHEN tf.gpt3_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_tweets,
+                        SUM(CASE WHEN tf.gpt3_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_tweets,
+                        SUM(CASE WHEN tf.gpt3_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_tweets
                     FROM tweet_fact tf
                     LEFT JOIN topic_dim td ON tf.topic_id = td.topic_id    -- Join on distribution key
                     LEFT JOIN firm_dim fd ON tf.firm_id = fd.firm_id       -- Join on distribution key
@@ -131,7 +133,6 @@ async def recommendation(
                     GROUP BY 
                         td.topic_id,
                         td.topic_name,
-                        td.modeled_topics,
                         fd.firm,
                         tf.firm_id
                 )
@@ -140,7 +141,6 @@ async def recommendation(
                     firm,
                     topic_id,
                     firm_id,
-                    modeled_topics,
                     -- Format total mentions (which is count of tweets about this topic)
                     CASE 
                         WHEN total_mentions >= 1000000 THEN ROUND(total_mentions/1000000.0, 1) || 'M'
@@ -240,16 +240,118 @@ async def recommendation(
         )
 
 
+# Pydantic model for the request body
+class ChatbotRequest(BaseModel):
+    user_query: str = Field(
+        ..., 
+        description="The user's natural language query or question for the recommender chatbot",
+        min_length=1,
+        max_length=1000,
+        example="What are some good sci-fi movies similar to Blade Runner?"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_query": "I'm looking for romantic comedies from the 2000s that are highly rated. Can you recommend some?"
+            }
+        }
 
+# Pydantic model for the response
+class ChatbotResponse(BaseModel):
+    status: str
+    message: str
+    body: Any = None
 
-
-
-
-
-
-
-
-
+@router.post("/recommendations/chatbot", 
+             tags=["Recommender"],
+             response_model=ChatbotResponse,
+             summary="Get AI-Powered Content Recommendations",
+             description="""
+             Generate personalized content recommendations using AI chatbot
+             
+             This endpoint provides an intelligent conversational interface for getting personalized 
+             content recommendations. The AI chatbot can understand natural language queries and 
+             provide tailored suggestions based on user preferences.
+             
+             Features:
+             - Natural language processing for user queries
+             - Personalized recommendation generation
+             - Context-aware responses
+             - Support for various content types and preferences
+             
+             Example queries:
+             - "I want to watch something funny tonight"
+             - "Recommend sci-fi movies similar to Interstellar"
+             - "What are good books for someone who likes fantasy?"
+             - "Show me highly rated documentaries about nature"
+             
+             Response includes:
+             - Status of the operation (success/warning/error)
+             - Descriptive message about the result
+             - Generated recommendations in the response body
+             
+             Note: The chatbot learns from the context of your query to provide 
+             the most relevant recommendations possible.
+             """,
+             responses={
+                 200: {
+                     "description": "Successful recommendation generation",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "status": "success",
+                                 "message": "Recommender Chatbot response generated successfully.",
+                                 "body": "Based on your interest in sci-fi movies like Blade Runner, I recommend: 1) Ghost in the Shell (1995) - explores similar themes of identity and consciousness, 2) Ex Machina (2014) - focuses on AI and what makes us human..."
+                             }
+                         }
+                     }
+                 },
+                 500: {
+                     "description": "Internal server error during recommendation generation",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": {
+                                     "status": "error",
+                                     "message": "Failed to generate chatbot response.",
+                                     "body": "Connection timeout to recommendation service"
+                                 }
+                             }
+                         }
+                     }
+                 }
+             })
+async def call_generate_chatbot_response(request: ChatbotRequest) -> Dict[str, Any]:
+    try:
+        response = generate_chatbot_response(request.user_query)
+        print("response:", response)
+        
+        if response:
+            logger.info("Recommender Chatbot response generated successfully.")
+            return {
+                "status": "success",
+                "message": "Recommender Chatbot response generated successfully.",
+                "body": response
+            }
+        else:
+            logger.warning("Failed to generate recommender response for the given query.")
+            return {
+                "status": "warning",
+                "message": "Failed to generate recommender response for the given query.",
+                "body": None
+            }
+            
+    except Exception as e:
+        logger.error(f"Error generating chatbot response: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "message": "Failed to generate chatbot response.",
+                "body": str(e)
+            }
+        )
 
 
 

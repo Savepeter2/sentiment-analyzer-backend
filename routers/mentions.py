@@ -158,13 +158,13 @@ async def mentions(
                         dd.year,
                         dd.month,
                         dd.day,
-                        tf.consensus_sentiment as sentiment,
+                        tf.gpt3_sentiment as sentiment,
                         COUNT(*) as sentiment_count
                     FROM tweet_fact tf
                     INNER JOIN firm_dim fd ON tf.firm_id = fd.firm_id  -- Join on distribution key
                     INNER JOIN date_dim dd ON tf.date_id = dd.date_id  -- Join on sort key
-                    WHERE tf.consensus_sentiment IS NOT NULL
-                        AND tf.consensus_sentiment != ''
+                    WHERE tf.gpt3_sentiment IS NOT NULL
+                        AND tf.gpt3_sentiment != ''
                         -- Optional: Add date range filter
                         -- AND dd.date >= '2024-01-01'
                         -- AND dd.date <= '2024-12-31'
@@ -175,7 +175,7 @@ async def mentions(
                         dd.year,
                         dd.month,
                         dd.day,
-                        tf.consensus_sentiment
+                        tf.gpt3_sentiment
                 )
                 SELECT 
                     firm,
@@ -207,7 +207,7 @@ async def mentions(
                         tf.tweet_id,
                         ud.username,
                         fd.firm,
-                        tf.consensus_sentiment as sentiment,
+                        tf.gpt3_sentiment as sentiment,
                         dd.date,
                         tf.tweet_text as tweet,
                         ud.followers_count,
@@ -231,8 +231,8 @@ async def mentions(
                     INNER JOIN user_dim ud ON tf.user_id = ud.user_id        -- Join on distribution key
                     INNER JOIN firm_dim fd ON tf.firm_id = fd.firm_id        -- Join on distribution key
                     INNER JOIN date_dim dd ON tf.date_id = dd.date_id        -- Join on sort key
-                    WHERE tf.consensus_sentiment IS NOT NULL
-                        AND tf.consensus_sentiment != ''
+                    WHERE tf.gpt3_sentiment IS NOT NULL
+                        AND tf.gpt3_sentiment != ''
                         AND tf.tweet_text IS NOT NULL
                         AND tf.tweet_text != ''
                         -- Optional: Filter by date range (uncomment and adjust as needed)

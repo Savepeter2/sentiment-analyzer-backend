@@ -121,16 +121,16 @@ async def analysis(
                 SUM(tf.no_views) as total_reach,
                 COUNT(*) as total_mentions,
                 -- Sentiment counts
-                SUM(CASE WHEN tf.consensus_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
-                SUM(CASE WHEN tf.consensus_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_count,
-                SUM(CASE WHEN tf.consensus_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_count,
+                SUM(CASE WHEN tf.gpt3_sentiment = 'Positive' THEN 1 ELSE 0 END) as positive_count,
+                SUM(CASE WHEN tf.gpt3_sentiment = 'Negative' THEN 1 ELSE 0 END) as negative_count,
+                SUM(CASE WHEN tf.gpt3_sentiment = 'Neutral' THEN 1 ELSE 0 END) as neutral_count,
                 -- Count tweets with valid sentiment
-                SUM(CASE WHEN tf.consensus_sentiment IN ('Positive', 'Negative', 'Neutral') THEN 1 ELSE 0 END) as sentiment_total
+                SUM(CASE WHEN tf.gpt3_sentiment IN ('Positive', 'Negative', 'Neutral') THEN 1 ELSE 0 END) as sentiment_total
             FROM tweet_fact tf
             INNER JOIN firm_dim fd ON tf.firm_id = fd.firm_id    -- Join on distribution key
             INNER JOIN date_dim dd ON tf.date_id = dd.date_id    -- Join on sort key
-            WHERE tf.consensus_sentiment IS NOT NULL
-                AND tf.consensus_sentiment != ''
+            WHERE tf.gpt3_sentiment IS NOT NULL
+                AND tf.gpt3_sentiment != ''
                 -- Optional: Add date range filter
                 -- AND dd.date >= '2024-01-01'
                 -- AND dd.date <= '2024-12-31'
