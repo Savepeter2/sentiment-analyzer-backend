@@ -42,4 +42,4 @@ app.include_router(comparison_router)
 app.include_router(recommender_router)
 
 # if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=5173)
+#     uvicorn.run("main:app", host="0.0.0.0", port=5173, reload=True)
