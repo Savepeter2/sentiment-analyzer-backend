@@ -21,6 +21,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:5173",   # Vite / React dev server
+    "https://sentiment-analyzer-backend-i70r.onrender.com",
     "https://sentiment-analyzer-frontend.onrender.com",  # Production (optional)
     "https://brand-monitor-pearl.vercel.app"]
 
