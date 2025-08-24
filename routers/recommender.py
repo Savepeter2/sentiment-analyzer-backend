@@ -263,95 +263,95 @@ class ChatbotResponse(BaseModel):
     message: str
     body: Any = None
 
-@router.post("/recommendations/chatbot", 
-             tags=["Recommender"],
-             response_model=ChatbotResponse,
-             summary="Get AI-Powered Content Recommendations",
-             description="""
-             Generate personalized content recommendations using AI chatbot
+# @router.post("/recommendations/chatbot", 
+#              tags=["Recommender"],
+#              response_model=ChatbotResponse,
+#              summary="Get AI-Powered Content Recommendations",
+#              description="""
+#              Generate personalized content recommendations using AI chatbot
              
-             This endpoint provides an intelligent conversational interface for getting personalized 
-             content recommendations. The AI chatbot can understand natural language queries and 
-             provide tailored suggestions based on user preferences.
+#              This endpoint provides an intelligent conversational interface for getting personalized 
+#              content recommendations. The AI chatbot can understand natural language queries and 
+#              provide tailored suggestions based on user preferences.
              
-             Features:
-             - Natural language processing for user queries
-             - Personalized recommendation generation
-             - Context-aware responses
-             - Support for various content types and preferences
+#              Features:
+#              - Natural language processing for user queries
+#              - Personalized recommendation generation
+#              - Context-aware responses
+#              - Support for various content types and preferences
              
-             Example queries:
-             - "I want to watch something funny tonight"
-             - "Recommend sci-fi movies similar to Interstellar"
-             - "What are good books for someone who likes fantasy?"
-             - "Show me highly rated documentaries about nature"
+#              Example queries:
+#              - "I want to watch something funny tonight"
+#              - "Recommend sci-fi movies similar to Interstellar"
+#              - "What are good books for someone who likes fantasy?"
+#              - "Show me highly rated documentaries about nature"
              
-             Response includes:
-             - Status of the operation (success/warning/error)
-             - Descriptive message about the result
-             - Generated recommendations in the response body
+#              Response includes:
+#              - Status of the operation (success/warning/error)
+#              - Descriptive message about the result
+#              - Generated recommendations in the response body
              
-             Note: The chatbot learns from the context of your query to provide 
-             the most relevant recommendations possible.
-             """,
-             responses={
-                 200: {
-                     "description": "Successful recommendation generation",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status": "success",
-                                 "message": "Recommender Chatbot response generated successfully.",
-                                 "body": "Based on your interest in sci-fi movies like Blade Runner, I recommend: 1) Ghost in the Shell (1995) - explores similar themes of identity and consciousness, 2) Ex Machina (2014) - focuses on AI and what makes us human..."
-                             }
-                         }
-                     }
-                 },
-                 500: {
-                     "description": "Internal server error during recommendation generation",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": {
-                                     "status": "error",
-                                     "message": "Failed to generate chatbot response.",
-                                     "body": "Connection timeout to recommendation service"
-                                 }
-                             }
-                         }
-                     }
-                 }
-             })
-async def call_generate_chatbot_response(request: ChatbotRequest) -> Dict[str, Any]:
-    try:
-        response = generate_chatbot_response(request.user_query)
-        print("response:", response)
+#              Note: The chatbot learns from the context of your query to provide 
+#              the most relevant recommendations possible.
+#              """,
+#              responses={
+#                  200: {
+#                      "description": "Successful recommendation generation",
+#                      "content": {
+#                          "application/json": {
+#                              "example": {
+#                                  "status": "success",
+#                                  "message": "Recommender Chatbot response generated successfully.",
+#                                  "body": "Based on your interest in sci-fi movies like Blade Runner, I recommend: 1) Ghost in the Shell (1995) - explores similar themes of identity and consciousness, 2) Ex Machina (2014) - focuses on AI and what makes us human..."
+#                              }
+#                          }
+#                      }
+#                  },
+#                  500: {
+#                      "description": "Internal server error during recommendation generation",
+#                      "content": {
+#                          "application/json": {
+#                              "example": {
+#                                  "detail": {
+#                                      "status": "error",
+#                                      "message": "Failed to generate chatbot response.",
+#                                      "body": "Connection timeout to recommendation service"
+#                                  }
+#                              }
+#                          }
+#                      }
+#                  }
+#              })
+# async def call_generate_chatbot_response(request: ChatbotRequest) -> Dict[str, Any]:
+#     try:
+#         response = generate_chatbot_response(request.user_query)
+#         print("response:", response)
         
-        if response:
-            logger.info("Recommender Chatbot response generated successfully.")
-            return {
-                "status": "success",
-                "message": "Recommender Chatbot response generated successfully.",
-                "body": response
-            }
-        else:
-            logger.warning("Failed to generate recommender response for the given query.")
-            return {
-                "status": "warning",
-                "message": "Failed to generate recommender response for the given query.",
-                "body": None
-            }
+#         if response:
+#             logger.info("Recommender Chatbot response generated successfully.")
+#             return {
+#                 "status": "success",
+#                 "message": "Recommender Chatbot response generated successfully.",
+#                 "body": response
+#             }
+#         else:
+#             logger.warning("Failed to generate recommender response for the given query.")
+#             return {
+#                 "status": "warning",
+#                 "message": "Failed to generate recommender response for the given query.",
+#                 "body": None
+#             }
             
-    except Exception as e:
-        logger.error(f"Error generating chatbot response: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "status": "error",
-                "message": "Failed to generate chatbot response.",
-                "body": str(e)
-            }
-        )
+#     except Exception as e:
+#         logger.error(f"Error generating chatbot response: {str(e)}")
+#         raise HTTPException(
+#             status_code=500,
+#             detail={
+#                 "status": "error",
+#                 "message": "Failed to generate chatbot response.",
+#                 "body": str(e)
+#             }
+#         )
 
 
 
